@@ -1,0 +1,11 @@
+{
+    "arch": "ramips",
+    "subarch": "mt76x8",
+    "packages": [
+        "zram-swap",
+        "qosify"
+    ],
+    "profile": "glinet_gl-mt300n-v2",
+    "files": "./glinet_gl-mt300n-v2",
+    "version": "23.05.5"
+}

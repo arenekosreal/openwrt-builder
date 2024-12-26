@@ -1,0 +1,17 @@
+{
+    "arch": "ath79",
+    "subarch": "generic",
+    "packages": [
+        "block-mount",
+        "kmod-fs-btrfs",
+        "kmod-sdhci",
+        "ksmbd-server",
+        "transmission-daemon",
+        "transmission-remote",
+        "zram-swap",
+        "qosify"
+    ],
+    "profile": "glinet_gl-ar750",
+    "files": "./glinet_gl-ar750",
+    "version": "23.05.5"
+}

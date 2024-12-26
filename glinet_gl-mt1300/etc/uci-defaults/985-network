@@ -1,0 +1,6 @@
+#!/bin/sh
+
+set -e
+
+uci set network.lan.ipaddr="192.168.8.1"
+uci commit network

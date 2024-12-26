@@ -1,0 +1,12 @@
+#!/bin/sh
+
+mmcblock="/dev/mmcblk0p1"
+
+set -e
+
+block detect | uci import fstab
+uci set fstab.sdcard=mount
+uci set fstab.sdcard.device="$mmcblock"
+uci set fstab.sdcard.target="/mnt/$mmcblock"
+uci set fstab.sdcard.options="compress=zstd"
+uci commit fstab

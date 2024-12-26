@@ -1,0 +1,21 @@
+#!/bin/sh
+
+# shellcheck disable=SC1091,SC3043,SC3010,SC3037
+
+. "/lib/functions.sh"
+
+# shellcheck source=../secrets
+. "/etc/secrets"
+
+set -e
+host="$(board_name | cut -d , -f 2)"
+memory="$(grep MemTotal: /proc/meminfo | sed 's/MemTotal://;s/kB//' | xargs)"
+memory=$(( memory / 1024 ))
+
+uci set system.@system[0].hostname="$host"
+uci set system.@system[0].timezone="CST-8"
+uci set system.@system[0].zonename="Asia/Shanghai"
+uci set system.@system[0].zram_comp_algo="zstd"
+uci set system.@system[0].zram_size_mb="$(( memory *2 ))"
+uci commit system
+echo -e "$PASSWORD\n$PASSWORD" | passwd

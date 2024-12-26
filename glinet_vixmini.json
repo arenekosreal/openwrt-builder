@@ -1,0 +1,11 @@
+{
+    "arch": "ramips",
+    "subarch": "mt76x8",
+    "packages": [
+        "zram-swap",
+        "qosify"
+    ],
+    "profile": "glinet_vixmini",
+    "files": "./glinet_vixmini",
+    "version": "23.05.5"
+}

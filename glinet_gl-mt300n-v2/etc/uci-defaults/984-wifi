@@ -1,0 +1,28 @@
+#!/bin/sh
+
+# shellcheck disable=SC1091,SC3043,SC3010,SC3037
+
+. "/lib/functions.sh"
+
+# shellcheck source=../secrets
+. "/etc/secrets"
+
+host="$(board_name | cut -d , -f 2)"
+
+# _on_each_wifi_iface $iface
+_on_each_wifi_iface()
+{
+    local device band host
+    device=$(uci get "wireless.$1.device")
+    band=$(uci get "wireless.$device.band")
+    uci set "wireless.$device.disabled"="0"
+    uci set "wireless.$1.ssid"="$host-$band"
+    uci set "wireless.$1.encryption"="sae-mixed"
+    uci set "wireless.$1.key"="$PASSWORD"
+}
+
+set -e
+
+config_load wireless
+config_foreach _on_each_wifi_iface "wifi-iface"
+uci commit wireless
