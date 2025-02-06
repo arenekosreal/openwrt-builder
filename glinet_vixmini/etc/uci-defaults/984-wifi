@@ -12,7 +12,7 @@ host="$(board_name | cut -d , -f 2)"
 # _on_each_wifi_iface $iface
 _on_each_wifi_iface()
 {
-    local device band host
+    local device band
     device=$(uci get "wireless.$1.device")
     band=$(uci get "wireless.$device.band")
     uci set "wireless.$device.disabled"="0"
