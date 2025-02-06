@@ -44,9 +44,10 @@ then
 fi
 readonly arch subarch packages profile files version
 
-declare host
+declare host compress
 host=$(uname -m)
-readonly imagebuilder="${OPENWRT_DOWNLOAD:-https://downloads.openwrt.org}/releases/$version/targets/$arch/$subarch/openwrt-imagebuilder-$version-$arch-$subarch.Linux-$host.tar.xz"
+compress="$(jq -r .builder.compress "$METAINFO")"
+readonly imagebuilder="${OPENWRT_DOWNLOAD:-https://downloads.openwrt.org}/releases/$version/targets/$arch/$subarch/openwrt-imagebuilder-$version-$arch-$subarch.Linux-$host.tar.$compress"
 unset host
 
 readonly BUILDER="builders/$arch/$subarch/$version"

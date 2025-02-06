@@ -1,18 +1,21 @@
 {
-    "arch": "ramips",
-    "subarch": "mt7621",
-    "packages": [
-        "adguardhome",
-        "block-mount",
-        "kmod-fs-btrfs",
-        "kmod-sdhci-mt7620",
-        "ksmbd-server",
-        "transmission-daemon",
-        "transmission-remote",
-        "zram-swap",
-        "qosify"
-    ],
-    "profile": "glinet_gl-mt1300",
-    "files": "./glinet_gl-mt1300",
-    "version": "23.05.5"
+  "arch": "ramips",
+  "subarch": "mt7621",
+  "packages": [
+    "adguardhome",
+    "block-mount",
+    "kmod-fs-btrfs",
+    "kmod-sdhci-mt7620",
+    "ksmbd-server",
+    "transmission-daemon",
+    "transmission-remote",
+    "zram-swap",
+    "qosify"
+  ],
+  "profile": "glinet_gl-mt1300",
+  "files": "./glinet_gl-mt1300",
+  "version": "24.10.0",
+  "builder": {
+    "compress": "zst"
+  }
 }
