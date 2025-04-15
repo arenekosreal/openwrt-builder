@@ -6,7 +6,13 @@
     "qosify"
   ],
   "profile": "glinet_gl-mt300n-v2",
-  "files": "./glinet_gl-mt300n-v2",
+  "files": {
+    "etc/uci-defaults/98-customizations": {
+      "source": [
+        "files/etc/uci-defaults/98-customizations"
+      ]
+    }
+  },
   "version": "24.10.1",
   "builder": {
     "compress": "zst"

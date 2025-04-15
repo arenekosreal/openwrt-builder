@@ -13,7 +13,18 @@
     "qosify"
   ],
   "profile": "glinet_gl-mt1300",
-  "files": "./glinet_gl-mt1300",
+  "files": {
+    "etc/uci-defaults/98-customizations": {
+      "source": [
+        "files/etc/uci-defaults/98-customizations"
+      ]
+    },
+    "etc/adguardhome.yaml": {
+      "source": [
+        "glinet_gl-mt1300/etc/adguardhome.yaml"
+      ]
+    }
+  },
   "version": "24.10.1",
   "builder": {
     "compress": "zst"

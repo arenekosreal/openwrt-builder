@@ -1,9 +1,0 @@
-#!/bin/sh
-
-set -e
-uci set qosify.wan.disabled="0"
-uci set qosify.wan.autorate_ingress="1"
-# https://speedtest.cn
-uci set qosify.wan.bandwidth_up="36mbps"
-uci set qosify.wan.bandwidth_down="94mbps"
-uci commit qosify

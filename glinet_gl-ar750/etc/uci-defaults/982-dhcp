@@ -1,7 +1,0 @@
-#!/bin/sh
-
-set -e
-
-uci set dhcp.@dnsmasq[0].local="/internal/"
-uci set dhcp.@dnsmasq[0].domain="internal"
-uci commit dhcp

@@ -12,7 +12,13 @@
     "qosify"
   ],
   "profile": "glinet_gl-ar750",
-  "files": "./glinet_gl-ar750",
+  "files": {
+    "etc/uci-defaults/98-customizations": {
+      "source": [
+        "files/etc/uci-defaults/98-customizations"
+      ]
+    }
+  },
   "version": "24.10.1",
   "builder": {
     "compress": "zst"

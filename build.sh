@@ -5,7 +5,7 @@
 
 # Requirements:
 # See https://openwrt.org/docs/guide-user/additional-software/imagebuilder for openwrt image builder dependencies
-# curl jq bsdtar coreutils sed
+# curl jq bsdtar coreutils sed xargs
 
 # Notes:
 # Use environment variable OPENWRT_DOWNLOAD to set an alternative site to https://downloads.openwrt.org
@@ -47,7 +47,7 @@ arch="$(__ensure_not_null .arch "$METAINFO")"
 subarch="$(__ensure_not_null .subarch "$METAINFO")"
 packages="$(__handle_possible_null '.packages | try join(" ")' "$METAINFO")"
 profile="$(__ensure_not_null .profile "$METAINFO")"
-files="$(__handle_possible_null .files "$METAINFO")"
+files="$(__handle_possible_null ".files | keys[]" "$METAINFO")"
 version="$(__ensure_not_null .version "$METAINFO")"
 readonly arch subarch packages profile files version
 
@@ -73,9 +73,28 @@ fi
 
 echo "Building for metainfo $METAINFO..."
 declare -a make_args=(-C "$BUILDER" PROFILE="$profile" PACKAGES="$packages")
-if [[ -n "$files" ]] && [[ -d "$files" ]]
+if [[ -n "$files" ]]
 then
-    make_args+=(FILES="$(readlink -f "$files")")
+    declare file_path target_file file file_mode
+    file_path="$(mktemp -dt "openwrt-builder-$profile-XXXXXX")"
+    while read -r file
+    do
+        declare -a source_files
+        read -r -a source_files <<< "$(jq -r ".files.\"$file\".source[]" "$METAINFO")"
+        if [[ "${#source_files[@]}" -gt 0 ]]
+        then
+            target_file="$file_path/$file"
+            file_mode="$(jq -r ".files.\"$file\".mode" "$METAINFO")"
+            if [[ -z "$file_mode" ]] || [[ "$file_mode" == "null" ]]
+            then
+                file_mode=644
+            fi
+            echo "Generating $file with ${source_files[*]}..."
+            cat "${source_files[@]}" | install "-Dm$file_mode" /dev/stdin "$target_file"
+        fi
+    done <<< "$files"
+    make_args+=(FILES="$file_path")
+    unset file_path target_file source_files file
 fi
 make "${make_args[@]}" image
 echo "You can get artifacts at $BUILDER/bin/targets/$arch/$subarch/"
