@@ -7,7 +7,7 @@
   ],
   "profile": "glinet_vixmini",
   "files": "./glinet_vixmini",
-  "version": "24.10.0",
+  "version": "24.10.1",
   "builder": {
     "compress": "zst"
   }

@@ -7,7 +7,7 @@
   ],
   "profile": "glinet_gl-mt300n-v2",
   "files": "./glinet_gl-mt300n-v2",
-  "version": "24.10.0",
+  "version": "24.10.1",
   "builder": {
     "compress": "zst"
   }

@@ -14,7 +14,7 @@
   ],
   "profile": "glinet_gl-mt1300",
   "files": "./glinet_gl-mt1300",
-  "version": "24.10.0",
+  "version": "24.10.1",
   "builder": {
     "compress": "zst"
   }
