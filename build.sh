@@ -1,4 +1,4 @@
-#!/usr/bin/bash -e
+#!/usr/bin/bash
 
 # Usage:
 # build.sh /path/to/metainfo.json
@@ -9,6 +9,8 @@
 
 # Notes:
 # Use environment variable OPENWRT_DOWNLOAD to set an alternative site to https://downloads.openwrt.org
+
+set -e
 
 # __ensure_not_null $jq_expression $json
 function __ensure_not_null() {
