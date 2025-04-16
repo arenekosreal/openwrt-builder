@@ -21,7 +21,7 @@
     },
     "etc/adguardhome.yaml": {
       "source": [
-        "glinet_gl-mt1300/etc/adguardhome.yaml"
+        "files/etc/adguardhome.yaml"
       ]
     }
   },

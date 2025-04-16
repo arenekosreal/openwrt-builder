@@ -1,17 +1,18 @@
 #!/bin/sh
 
-# shellcheck shell=ash
+# shellcheck disable=SC2112,SC3001,SC3010,SC3037,SC3043
 
 PASSWORD="example-password"
 SSH_AUTHORIZED_KEY="example-public-key"
 
-# shellcheck source=dependencies/uci-defaults.sh
-. /lib/functions/uci-defaults.sh
+# shellcheck source=dependencies/functions.sh
+. /lib/functions.sh
 
 HOST="$(board_name | cut -d , -f 2)"
 MEMORY="$(grep MemTotal: /proc/meminfo | sed 's/MemTotal://;s/kB//' | xargs)"
 MEMORY=$(( MEMORY / 1024 )) # To MiB
 TIMEZONE="CST-8"
+TIMEZONE_NAME="Asia/Shanghai"
 ZRAM_COMPRESS="zstd"
 PRIVATE_DOMAIN="internal"
 NETWORK_IP_PREFIX="192.168.8"
@@ -20,31 +21,11 @@ BANDWIDTH_DOWN="94mbps"
 BTRFS_OPTIONS="compress=zstd"
 TRANSMISSION_USER="transmission"
 
-UCI_BATCH_COMMANDS=""
-
-ucidef_set_root_password_plain "$PASSWORD"
-ucidef_set_hostname "$HOST"
-ucidef_set_timezone "$TIMEZONE"
-ucidef_set_ssh_authorized_key "$SSH_AUTHORIZED_KEY"
-
-
-config_load wireless
-
-# __on_each_wifi_interface $iface
-function __on_each_wifi_interface() {
-    local device band
-    device=$(uci -q get "wireless.$1.device")
-    band=$(uci -q get "wireless.$device.band")
-    ucidef_set_wireless "$band" "$HOST-$band" "sae-mixed" "$PASSWORD"
-    UCI_BATCH_COMMANDS="$UCI_BATCH_COMMANDS
-set wireless.\"$device\".disabled=\"0\""
-}
-
-echo "Setting wifi interfaces..."
-config_foreach __on_each_wifi_interface "wifi-iface"
-
-echo "Setting basic system..."
-UCI_BATCH_COMMANDS="$UCI_BATCH_COMMANDS
+UCI_BATCH_COMMANDS="
+# Basic system
+set system.@system[0].hostname=\"$HOST\"
+set system.@system[0].timezone=\"$TIMEZONE\"
+set system.@system[0].zonename=\"$TIMEZONE_NAME\"
 set system.@system[0].zram_comp_algo=\"$ZRAM_COMPRESS\"
 set system.@system[0].zram_size_mb=\"$MEMORY\"
 set dhcp.@dnsmasq[0].local=\"/$PRIVATE_DOMAIN/\"
@@ -53,11 +34,27 @@ set dropbear.@dropbear[0].RootPasswordAuth=\"on\"
 set dropbear.@dropbear[0].Interface=\"lan\"
 set network.lan.ipaddr=\"$NETWORK_IP_PREFIX.1\"
                     "
-
-if uci -q show qosify
-then
-    echo "Setting qosify..."
+config_load wireless
+# __on_each_wifi_interface $iface
+function __on_each_wifi_interface() {
+    local device band
+    device=$(uci -q get "wireless.$1.device")
+    band=$(uci -q get "wireless.$device.band")
     UCI_BATCH_COMMANDS="$UCI_BATCH_COMMANDS
+set wireless.$device.disabled=\"0\"
+set wireless.$device.ssid=\"$HOST-$band\"
+set wireless.$device.encryption=\"sae-mixed\"
+set wireless.$device.key=\"$PASSWORD\""
+}
+
+UCI_BATCH_COMMANDS="$UCI_BATCH_COMMANDS
+# Wireless configuration"
+config_foreach __on_each_wifi_interface "wifi-iface"
+
+if uci -q show qosify > /dev/null
+then
+    UCI_BATCH_COMMANDS="$UCI_BATCH_COMMANDS
+# Qosify
 set qosify.wan.disabled=0
 set qosify.wan.autorate_ingress=\"1\"
 set qosify.wan.bandwidth_up=\"$BANDWIDTH_UP\"
@@ -69,112 +66,90 @@ then
     # __on_each_mount $mount
     function __on_each_mount() {
         local enabled target fstype
-        target="$(uci -q get "fstab.\"$1\".target")"
-        if ! enabled="$(uci -q get "fstab.\"$1\".enabled")" || [[ "$enabled" != 1 ]]
+        target="$(uci -q get "fstab.$1.target")"
+        if ! enabled="$(uci -q get "fstab.$1.enabled")" || [[ "$enabled" != 1 ]]
         then
-            UCI_BATCH_COMMANDS+=("fstab.\"$1\".enabled=\"1\"")
+            UCI_BATCH_COMMANDS="$UCI_BATCH_COMMANDS
+set fstab.$1.enabled=\"1\""
         fi
         fstype="$(block info | grep "$target" | cut -d " " -f 4 | sed "s/TYPE=//;s/\"//g" | xargs)"
         case "$fstype" in
             btrfs)
                 UCI_BATCH_COMMANDS="$UCI_BATCH_COMMANDS
-fstab.\"$1\".options=\"$BTRFS_OPTIONS\""
+set fstab.$1.options=\"$BTRFS_OPTIONS\""
                 ;;
             *)
                 ;;
         esac
     }
-    echo "Setting fstab..."
+    UCI_BATCH_COMMANDS="$UCI_BATCH_COMMANDS
+# Fstab"
     block detect | uci import fstab
     config_load fstab
     config_foreach __on_each_mount mount
 fi
 
-if uci -q show ksmbd
+if uci -q show ksmbd > /dev/null
 then
-    echo "Setting ksmbd..."
-    while read -r mnt
-    do
-        case "$mnt" in
-            mmcblk*p*|sd*p*|nvme*p*)
-                name="$(basename "$mnt")"
-                UCI_BATCH_COMMANDS="$UCI_BATCH_COMMANDS
-set ksmbd.\"$name\"=\"share\"
-set ksmbd.\"$name\".name=\"$name\"
-set ksmbd.\"$name\".path=\"$mnt\"
-set ksmbd.\"$name\".read_only=\"yes\"
-set ksmbd.\"$name\".writable=\"root\"
-set ksmbd.\"$name\".guest_ok=\"yes\""
-                ;;
-            *)
-                ;;
-        esac
-    done <<<"$(find /mnt -mindepth 1 -maxdepth 1 -type d)"
-    ksmbd.adduser -a -p "$PASSWORD" "root"
-fi
-
-if uci -q show transmission && [[ -d "$STORAGE" ]]
-then
-    echo "Setting transmission..."
     UCI_BATCH_COMMANDS="$UCI_BATCH_COMMANDS
-transmission.@transmission[0].enabled=\"1\"
-transmission.@transmission[0].encryption=\"1\"
-transmission.@transmission[0].download_dir=\"$STORAGE/transmission/downloads\"
-transmission.@transmission[0].incomplete_dir=\"$STORAGE/transmission/downloading\"
-transmission.@transmission[0].incomplete_dir_enabled=\"true\"
-transmission.@transmission[0].lpd_enabled=\"true\"
-transmission.@transmission[0].rpc_authentication_required=\"true\"
-transmission.@transmission[0].rpc_bind_address=\"$NETWORK_IP_PREFIX.1\"
-transmission.@transmission[0].rpc_whitelist=\"127.0.0.1,$NETWORK_IP_PREFIX.*\"
-transmission.@transmission[0].rpc_whitelist_enabled=\"true\"
-transmission.@transmission[0].rpc_username=\"$TRANSMISSION_USER\"
-transmission.@transmission[0].rpc_password=\"$PASSWORD\""
-fi
-
-# Taken from https://openwrt.org/docs/guide-user/services/dns/adguard-home
-if command -v AdGuardHome > /dev/null
-then
-    # Get the first IPv4 and IPv6 Address of router and store them in following variables for use during the script.
-    NET_ADDR=$(/sbin/ip -o -4 addr list br-lan | awk 'NR==1{ split($4, ip_addr, "/"); print ip_addr[1] }')
-    NET_ADDR6=$(/sbin/ip -o -6 addr list br-lan scope global | awk 'NR==1{ split($4, ip_addr, "/"); print ip_addr[1] }')
-
-    echo "Router IPv4 : ""${NET_ADDR}"
-    echo "Router IPv6 : ""${NET_ADDR6}"
-
-    # 1. Enable dnsmasq to do PTR requests.
-    # 2. Reduce dnsmasq cache size as it will only provide PTR/rDNS info.
-    # 3. Disable rebind protection. Filtered DNS service responses from blocked domains are 0.0.0.0 which causes dnsmasq to fill the system log with possible DNS-rebind attack detected messages.
-    # 4. Move dnsmasq to port 54.
-    # 5. Set Ipv4 DNS advertised by option 6 DHCP
-    # 6. Set Ipv6 DNS advertised by DHCP
-    UCI_BATCH_COMMANDS="$UCI_BATCH_COMMANDS
-set dhcp.@dnsmasq[0].noresolv=\"0\"
-set dhcp.@dnsmasq[0].cachesize=\"1000\"
-set dhcp.@dnsmasq[0].rebind_protection='0'
-set dhcp.@dnsmasq[0].port=\"54\"
-
-delete dhcp.@dnsmasq[0].server
-add_list dhcp.@dnsmasq[0].server=\"${NET_ADDR}\"
-
-# Delete existing config ready to install new options.
-delete dhcp.lan.dhcp_option
-delete dhcp.lan.dns
-
-# DHCP option 6: which DNS (Domain Name Server) to include in the IP configuration for name resolution
-add_list dhcp.lan.dhcp_option='6,'\"${NET_ADDR}\"
-
-# DHCP option 3: default router or last resort gateway for this interface
-add_list dhcp.lan.dhcp_option='3,'\"${NET_ADDR}\""
-
-    #Set IPv6 Announced DNS
-    for OUTPUT in $(ip -o -6 addr list br-lan scope global | awk '{ split($4, ip_addr, "/"); print ip_addr[1] }')
+# Ksmbd"
+    for block in /dev/nvme*p* /dev/sd*p* /dev/mmcblk*p*
     do
-        echo "Adding $OUTPUT to IPV6 DNS"
-        UCI_BATCH_COMMANDS="$UCI_BATCH_COMMANDS
-add_list dhcp.lan.dns=\"$OUTPUT\""
+        if [[ -b "$block" ]]
+        then
+            name="$(basename "$block")"
+            UCI_BATCH_COMMANDS="$UCI_BATCH_COMMANDS
+set ksmbd.$name=\"share\"
+set ksmbd.$name.name=\"$name\"
+set ksmbd.$name.path=\"/mnt/$name\"
+set ksmbd.$name.read_only=\"yes\"
+set ksmbd.$name.writable=\"root\"
+set ksmbd.$name.guest_ok=\"yes\""
+            if [[ -z "$STORAGE" ]]
+            then
+                STORAGE="/mnt/$name"
+            fi
+        fi
     done
 fi
 
+if uci -q show transmission > /dev/null && [[ -n "$STORAGE" ]]
+then
+    UCI_BATCH_COMMANDS="$UCI_BATCH_COMMANDS
+# Transmission
+set transmission.@transmission[0].enabled=\"1\"
+set transmission.@transmission[0].encryption=\"1\"
+set transmission.@transmission[0].download_dir=\"$STORAGE/transmission/downloads\"
+set transmission.@transmission[0].incomplete_dir=\"$STORAGE/transmission/downloading\"
+set transmission.@transmission[0].incomplete_dir_enabled=\"true\"
+set transmission.@transmission[0].lpd_enabled=\"true\"
+set transmission.@transmission[0].rpc_authentication_required=\"true\"
+set transmission.@transmission[0].rpc_bind_address=\"$NETWORK_IP_PREFIX.1\"
+set transmission.@transmission[0].rpc_whitelist=\"127.0.0.1,$NETWORK_IP_PREFIX.*\"
+set transmission.@transmission[0].rpc_whitelist_enabled=\"true\"
+set transmission.@transmission[0].rpc_username=\"$TRANSMISSION_USER\"
+set transmission.@transmission[0].rpc_password=\"$PASSWORD\""
+fi
+
+if command -v AdGuardHome > /dev/null && [[ -f /etc/adguardhome.yaml ]]
+then
+    # Taken from https://openwrt.org/docs/guide-user/services/dns/adguard-home#setup
+    UCI_BATCH_COMMANDS="$UCI_BATCH_COMMANDS
+# AdGuardHome as DNS server only
+set dhcp.@dnsmasq[0].port=\"54\"
+set dhcp.@dnsmasq[0].expandhosts=\"1\"
+set dhcp.@dnsmasq[0].cachesize=\"0\"
+set dhcp.@dnsmasq[0].noresolv=\"1\""
+fi
+
 echo "Invoking uci commands:"
-echo "$UCI_BATCH_COMMANDS" | tee >(uci batch)
+echo "$UCI_BATCH_COMMANDS" | tee >(uci -q batch)
+echo "Running extra commands to commit uci changes and other things..."
 uci commit
+echo -e "$PASSWORD\n$PASSWORD" | passwd root
+mkdir -p /etc/dropbear
+echo "$SSH_AUTHORIZED_KEY" >> /etc/dropbear/authorized_keys
+if uci -q show ksmbd > /dev/null
+then
+    ksmbd.adduser -a -p "$PASSWORD" "root"
+fi
