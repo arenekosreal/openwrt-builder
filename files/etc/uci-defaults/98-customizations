@@ -20,6 +20,7 @@ BANDWIDTH_UP="36mbps"
 BANDWIDTH_DOWN="94mbps"
 BTRFS_OPTIONS="compress=zstd"
 TRANSMISSION_USER="transmission"
+LOG_FILE="/tmp/uci-customizations.log"
 
 UCI_BATCH_COMMANDS="
 # Basic system
@@ -65,22 +66,9 @@ if command -v block > /dev/null
 then
     # __on_each_mount $mount
     function __on_each_mount() {
-        local enabled target fstype
-        target="$(uci -q get "fstab.$1.target")"
-        if ! enabled="$(uci -q get "fstab.$1.enabled")" || [[ "$enabled" != 1 ]]
-        then
-            UCI_BATCH_COMMANDS="$UCI_BATCH_COMMANDS
-set fstab.$1.enabled=\"1\""
-        fi
-        fstype="$(block info | grep "$target" | cut -d " " -f 4 | sed "s/TYPE=//;s/\"//g" | xargs)"
-        case "$fstype" in
-            btrfs)
-                UCI_BATCH_COMMANDS="$UCI_BATCH_COMMANDS
+        UCI_BATCH_COMMANDS="$UCI_BATCH_COMMANDS
+set fstab.$1.enabled=\"1\"
 set fstab.$1.options=\"$BTRFS_OPTIONS\""
-                ;;
-            *)
-                ;;
-        esac
     }
     UCI_BATCH_COMMANDS="$UCI_BATCH_COMMANDS
 # Fstab"
@@ -142,14 +130,16 @@ set dhcp.@dnsmasq[0].cachesize=\"0\"
 set dhcp.@dnsmasq[0].noresolv=\"1\""
 fi
 
-echo "Invoking uci commands:"
-echo "$UCI_BATCH_COMMANDS" | tee | tee /tmp/uci-customizations.txt >(uci -q batch)
-echo "Running extra commands to commit uci changes and other things..."
-uci commit
-echo -e "$PASSWORD\n$PASSWORD" | passwd root
-mkdir -p /etc/dropbear
-echo "$SSH_AUTHORIZED_KEY" >> /etc/dropbear/authorized_keys
-if uci -q show ksmbd > /dev/null
-then
-    ksmbd.adduser -a -p "$PASSWORD" "root"
-fi
+{
+    echo "Invoking uci commands:"
+    echo "$UCI_BATCH_COMMANDS" | tee >(uci batch)
+    echo "Running extra commands to commit uci changes and other things..."
+    uci commit
+    echo -e "$PASSWORD\n$PASSWORD" | passwd root
+    mkdir -p /etc/dropbear
+    echo "$SSH_AUTHORIZED_KEY" >> /etc/dropbear/authorized_keys
+    if command -v ksmbd.adduser > /dev/null
+    then
+        ksmbd.adduser -a -p "$PASSWORD" "root" || ksmbd.adduser -u -p "$PASSWORD" "root"
+    fi
+} | tee "$LOG_FILE"
