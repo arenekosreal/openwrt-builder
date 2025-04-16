@@ -137,7 +137,7 @@ fi
     uci commit
     echo -e "$PASSWORD\n$PASSWORD" | passwd root
     mkdir -p /etc/dropbear
-    echo "$SSH_AUTHORIZED_KEY" >> /etc/dropbear/authorized_keys
+    grep -q "$SSH_AUTHORIZED_KEY" /etc/dropbear/authorized_keys || echo "$SSH_AUTHORIZED_KEY" >> /etc/dropbear/authorized_keys
     if command -v ksmbd.adduser > /dev/null
     then
         ksmbd.adduser -a -p "$PASSWORD" "root" || ksmbd.adduser -u -p "$PASSWORD" "root"
