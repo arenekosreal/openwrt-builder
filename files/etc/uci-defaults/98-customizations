@@ -143,7 +143,7 @@ set dhcp.@dnsmasq[0].noresolv=\"1\""
 fi
 
 echo "Invoking uci commands:"
-echo "$UCI_BATCH_COMMANDS" | tee >(uci -q batch)
+echo "$UCI_BATCH_COMMANDS" | tee | tee /tmp/uci-customizations.txt >(uci -q batch)
 echo "Running extra commands to commit uci changes and other things..."
 uci commit
 echo -e "$PASSWORD\n$PASSWORD" | passwd root
