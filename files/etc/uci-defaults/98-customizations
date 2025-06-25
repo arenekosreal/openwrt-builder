@@ -42,10 +42,9 @@ function __on_each_wifi_interface() {
     device=$(uci -q get "wireless.$1.device")
     band=$(uci -q get "wireless.$device.band")
     UCI_BATCH_COMMANDS="$UCI_BATCH_COMMANDS
-set wireless.$device.disabled=\"0\"
-set wireless.$device.ssid=\"$HOST-$band\"
-set wireless.$device.encryption=\"sae-mixed\"
-set wireless.$device.key=\"$PASSWORD\""
+set wireless.$1.ssid=\"$HOST-$band\"
+set wireless.$1.encryption=\"sae-mixed\"
+set wireless.$1.key=\"$PASSWORD\""
 }
 
 UCI_BATCH_COMMANDS="$UCI_BATCH_COMMANDS
