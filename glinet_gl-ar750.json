@@ -9,7 +9,8 @@
     "transmission-daemon",
     "transmission-remote",
     "zram-swap",
-    "qosify"
+    "qosify",
+    "wsdd2"
   ],
   "profile": "glinet_gl-ar750",
   "files": {

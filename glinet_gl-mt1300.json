@@ -10,7 +10,8 @@
     "transmission-daemon",
     "transmission-remote",
     "zram-swap",
-    "qosify"
+    "qosify",
+    "wsdd2"
   ],
   "profile": "glinet_gl-mt1300",
   "files": {
