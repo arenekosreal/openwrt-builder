@@ -2,8 +2,8 @@
 
 # shellcheck disable=SC2112,SC3001,SC3010,SC3037,SC3043
 
-PASSWORD="example-password"
-SSH_AUTHORIZED_KEY="example-public-key"
+PASSWORD='@.password@'
+SSH_AUTHORIZED_KEY='@.ssh_authorized_key@'
 
 # shellcheck source=dependencies/functions.sh
 . /lib/functions.sh

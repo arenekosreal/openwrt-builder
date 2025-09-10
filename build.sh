@@ -5,7 +5,7 @@
 
 # Requirements:
 # See https://openwrt.org/docs/guide-user/additional-software/imagebuilder for openwrt image builder dependencies
-# curl jq bsdtar coreutils sed xargs
+# curl jq bsdtar coreutils sed grep
 
 # Notes:
 # Use environment variable OPENWRT_DOWNLOAD to set an alternative site to https://downloads.openwrt.org
@@ -41,6 +41,7 @@ then
     echo "$METAINFO is not a valid file." > /dev/stderr
     exit 1
 fi
+readonly SECRETS_JSON="secrets.json"
 
 declare arch subarch packages profile files version
 arch="$(__ensure_not_null .arch "$METAINFO")"
@@ -90,7 +91,20 @@ then
                 file_mode=644
             fi
             echo "Generating $file with ${source_files[*]}..."
-            cat "${source_files[@]}" | install "-Dm$file_mode" /dev/stdin "$target_file"
+            cat "${source_files[@]}" | install -D /dev/stdin "$target_file"
+            if [[ -f "$SECRETS_JSON" ]]
+            then
+                declare secret_placeholder
+                while read -r secret_placeholder
+                do
+                    echo "Applying secret $secret_placeholder into configuration..."
+                    declare secret_jq_expression secret_value
+                    secret_jq_expression="$(echo "$secret_placeholder" | sed 's/^@//;s/@$//')"
+                    secret_value="$(jq -r "$secret_jq_expression" "$SECRETS_JSON")"
+                    sed -i "s/$secret_placeholder/$secret_value/g" "$target_file"
+                done < <(grep -o -E '@\..+@' "$target_file")
+            fi
+            chmod "$file_mode" "$target_file"
         fi
     done <<< "$files"
     make_args+=(FILES="$file_path")

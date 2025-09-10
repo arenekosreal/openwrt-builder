@@ -1,3 +1,4 @@
 /dependencies
 /builders
 /files/etc/uci-defaults/98-customizations
+/secrets.json
