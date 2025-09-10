@@ -3,7 +3,8 @@
   "subarch": "mt76x8",
   "packages": [
     "zram-swap",
-    "qosify"
+    "qosify",
+    "umdns"
   ],
   "profile": "glinet_vixmini",
   "files": {
