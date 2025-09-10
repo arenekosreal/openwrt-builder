@@ -11,7 +11,7 @@
     "transmission-remote",
     "zram-swap",
     "qosify",
-    "wsdd2"
+    "umdns"
   ],
   "profile": "glinet_gl-mt1300",
   "files": {

@@ -10,7 +10,7 @@
     "transmission-remote",
     "zram-swap",
     "qosify",
-    "wsdd2"
+    "umdns"
   ],
   "profile": "glinet_gl-ar750",
   "files": {
