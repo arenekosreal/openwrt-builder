@@ -68,7 +68,8 @@ then
     curl -L "$imagebuilder" -o - | bsdtar -x --strip-components=1 -C "$BUILDER" -p -f -
     if [[ -n "$OPENWRT_DOWNLOAD" ]]
     then
-        sed -i "s|https://downloads.openwrt.org|$OPENWRT_DOWNLOAD|g" "$BUILDER/repositories.conf"
+        [[ -f "$BUILDER/repositories.conf" ]] && sed -i "s|https://downloads.openwrt.org|$OPENWRT_DOWNLOAD|g" "$BUILDER/repositories.conf"
+        [[ -f "$BUILDER/repositories" ]] && sed -i "s|https://downloads.openwrt.org|$OPENWRT_DOWNLOAD|g" "$BUILDER/repositories"
     fi
 fi
 
