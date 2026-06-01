@@ -26,7 +26,7 @@
       ]
     }
   },
-  "version": "25.12.2",
+  "version": "25.12.4",
   "builder": {
     "compress": "zst"
   }
