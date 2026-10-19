@@ -34,8 +34,8 @@ set dhcp.@dnsmasq[0].domain=\"$PRIVATE_DOMAIN\"
 set dhcp.lan.domain=\"$PRIVATE_DOMAIN\"
 set dropbear.@dropbear[0].RootPasswordAuth=\"on\"
 set dropbear.@dropbear[0].Interface=\"lan\"
-set network.lan.ipaddr=\"$NETWORK_IP_PREFIX.1\"
-                    "
+add_list network.lan.ipaddr=\"$NETWORK_IP_PREFIX.1/24\""
+
 config_load wireless
 # __on_each_wifi_interface $iface
 function __on_each_wifi_interface() {
