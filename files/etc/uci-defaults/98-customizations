@@ -46,7 +46,8 @@ function __on_each_wifi_interface() {
 set wireless.$device.disabled=\"0\"
 set wireless.$1.ssid=\"$HOST-$band\"
 set wireless.$1.encryption=\"sae-mixed\"
-set wireless.$1.key=\"$PASSWORD\""
+set wireless.$1.key=\"$PASSWORD\"
+set wireless.$1.disabled=\"0\""
 }
 
 UCI_BATCH_COMMANDS="$UCI_BATCH_COMMANDS
