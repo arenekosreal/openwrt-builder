@@ -34,6 +34,7 @@ set dhcp.@dnsmasq[0].domain=\"$PRIVATE_DOMAIN\"
 set dhcp.lan.domain=\"$PRIVATE_DOMAIN\"
 set dropbear.@dropbear[0].RootPasswordAuth=\"on\"
 set dropbear.@dropbear[0].Interface=\"lan\"
+delete network.lan.ipaddr
 add_list network.lan.ipaddr=\"$NETWORK_IP_PREFIX.1/24\""
 
 config_load wireless
