@@ -2,7 +2,6 @@
   "arch": "ramips",
   "subarch": "mt7621",
   "packages": [
-    "adguardhome",
     "block-mount",
     "kmod-fs-btrfs",
     "kmod-sdhci-mt7620",
@@ -18,11 +17,6 @@
     "etc/uci-defaults/98-customizations": {
       "source": [
         "files/etc/uci-defaults/98-customizations"
-      ]
-    },
-    "etc/adguardhome.yaml": {
-      "source": [
-        "files/etc/adguardhome.yaml"
       ]
     }
   },
